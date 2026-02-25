@@ -5,7 +5,7 @@ with source as (
 ),
 
 renamed as (
-
+        --identifiers
         select 
         cast(vendorid as int64) as vendor_id,
         cast(ratecodeid as int64) as rate_code_id,
@@ -20,6 +20,7 @@ renamed as (
         store_and_fwd_flag,
         cast(passenger_count as int) as passenger_count,
         cast(trip_distance as numeric) as trip_distance,
+        1 as trip_type,
 
 
         -- payment info
@@ -29,6 +30,7 @@ renamed as (
         cast(tip_amount as numeric) as tip_amount,
         cast(tolls_amount as numeric) as tolls_amount,
         cast(improvement_surcharge as numeric) as improvement_surcharge,
+        0 as ehail_fee, --yellow taxis don't have ehail fee
         cast(total_amount as numeric) as total_amount,
         cast(payment_type as int) as payment_type
 
