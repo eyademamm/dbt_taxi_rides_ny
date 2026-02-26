@@ -1,0 +1,10 @@
+version: 2
+
+models:
+  - name: fct_trips
+    columns:
+      - name: trip_id
+        description: The unique identifier of the fct_trips table
+        data_tests:
+          - unique
+          - not_null
