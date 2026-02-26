@@ -1,27 +1,15 @@
-with green_tripdata as (
-    select * from {{ ref('stg_green_tripdata') }}
-),
+-- Union green and yellow taxi data into a single dataset
+-- Demonstrates how to combine data from multiple sources with slightly different schemas
 
- yellow_tripdata as (
-    select * from {{ ref('stg_yellow_tripdata') }}
-),
-
-trips_unioned as (
-    select * from green_tripdata
-    union all
-    select * from yellow_tripdata
-),
-
-duplicates_removed as (
-    select 
-        ROW_NUMBER() over(partition by vendor_id,pickup_datetime,service_type ORDER BY pickup_datetime) rn,
+with green_trips as (
+    select
         vendor_id,
         rate_code_id,
         pickup_location_id,
         dropoff_location_id,
         pickup_datetime,
         dropoff_datetime,
-        timestamp_diff(dropoff_datetime,pickup_datetime,second) as trip_duration,
+        store_and_fwd_flag,
         passenger_count,
         trip_distance,
         trip_type,
@@ -30,20 +18,39 @@ duplicates_removed as (
         mta_tax,
         tip_amount,
         tolls_amount,
-        improvement_surcharge,
         ehail_fee,
-        service_type,
+        improvement_surcharge,
         total_amount,
-        payment_type
-
-    from trips_unioned
+        payment_type,
+        'Green' as service_type
+    from {{ ref('stg_green_tripdata') }}
 ),
 
-
-final as (
-    select * 
-    from duplicates_removed
-    where rn = 1
+yellow_trips as (
+    select
+        vendor_id,
+        rate_code_id,
+        pickup_location_id,
+        dropoff_location_id,
+        pickup_datetime,
+        dropoff_datetime,
+        store_and_fwd_flag,
+        passenger_count,
+        trip_distance,
+        cast(1 as integer) as trip_type,  -- Yellow taxis only do street-hail (code 1)
+        fare_amount,
+        extra,
+        mta_tax,
+        tip_amount,
+        tolls_amount,
+        cast(0 as numeric) as ehail_fee,  -- Yellow taxis don't have ehail_fee
+        improvement_surcharge,
+        total_amount,
+        payment_type,
+        'Yellow' as service_type
+    from {{ ref('stg_yellow_tripdata') }}
 )
 
-select * from final
+select * from green_trips
+union all
+select * from yellow_trips
